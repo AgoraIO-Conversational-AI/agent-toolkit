@@ -1,0 +1,23 @@
+{
+  "name": "agent-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript SDK for building Agora Conversational AI applications",
+  "scripts": {
+    "test": "pnpm -r test",
+    "test:watch": "pnpm -r test:watch",
+    "build": "pnpm -r build"
+  },
+  "keywords": [
+    "agora",
+    "conversational-ai",
+    "voice-ai",
+    "rtc",
+    "rtm"
+  ],
+  "author": "Agora",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

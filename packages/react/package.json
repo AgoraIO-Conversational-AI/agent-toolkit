@@ -1,0 +1,23 @@
+{
+  "name": "@agora/conversational-ai-react",
+  "version": "1.0.0",
+  "description": "React hooks and bindings for Agora Conversational AI SDK",
+  "main": "index.ts",
+  "types": "index.ts",
+  "sideEffects": false,
+  "keywords": [
+    "agora",
+    "voice-ai",
+    "react",
+    "hooks",
+    "conversational-ai"
+  ],
+  "dependencies": {
+    "agora-rtc-sdk-ng": "^4.24.2"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@agora/conversational-ai": "1.0.0"
+  },
+  "license": "MIT"
+}

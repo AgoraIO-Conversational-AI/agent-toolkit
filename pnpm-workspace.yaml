@@ -1,0 +1,3 @@
+packages:
+  - 'packages/conversational-ai'
+  - 'packages/react'

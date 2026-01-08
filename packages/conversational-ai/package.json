@@ -1,0 +1,33 @@
+{
+  "name": "@agora/conversational-ai",
+  "version": "1.0.0",
+  "description": "Lightweight, framework-agnostic TypeScript SDK for building voice AI applications with Agora RTC/RTM",
+  "main": "index.ts",
+  "types": "index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "agora",
+    "voice-ai",
+    "conversational-ai",
+    "rtc",
+    "rtm",
+    "real-time-communication"
+  ],
+  "peerDependencies": {
+    "agora-rtc-sdk-ng": ">=4.23.4",
+    "agora-rtm": ">=2.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0",
+    "@vitest/ui": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "jsdom": "^23.0.0"
+  },
+  "license": "MIT"
+}
