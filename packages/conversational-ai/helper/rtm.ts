@@ -19,6 +19,7 @@ export interface RTMHelperEventMap {
   [RTMHelperEvents.STATUS]: (status: any) => void
   [RTMHelperEvents.CONNECTION_STATE_CHANGED]: (state: ConnectionState) => void
   [RTMHelperEvents.ERROR]: (error: Error) => void
+  [key: string]: (...args: any[]) => void
 }
 
 export class RTMHelper extends EventHelper<RTMHelperEventMap> {

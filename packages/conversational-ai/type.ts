@@ -57,6 +57,7 @@ export interface TranscriptItem {
   status: TurnStatus
   words?: Word[]
   metadata?: any
+  start_ms?: number
 }
 
 export interface UserTranscription {
@@ -170,6 +171,7 @@ export interface ConversationalAIAPIEventMap {
   [ConversationalAIAPIEvents.CONNECTION_STATE_CHANGED]: (state: ConnectionState) => void
   [ConversationalAIAPIEvents.MESSAGE_ERROR]: (error: Error) => void
   [ConversationalAIAPIEvents.DEBUG_LOG]: (message: string) => void
+  [key: string]: (...args: any[]) => void
 }
 
 export enum RTCHelperEvents {
@@ -196,4 +198,5 @@ export interface RTCHelperEventMap {
   [RTCHelperEvents.AUDIO_PTS]: (pts: number) => void
   [RTCHelperEvents.STREAM_MESSAGE]: (uid: number, stream: Uint8Array) => void
   [RTCHelperEvents.ERROR]: (error: Error) => void
+  [key: string]: (...args: any[]) => void
 }

@@ -61,11 +61,11 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
     AGC?: boolean
   }): Promise<IMicrophoneAudioTrack> {
     this.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack({
-      encoderConfig: config?.encoderConfig || "high_quality_stereo",
+      encoderConfig: (config?.encoderConfig || "high_quality_stereo") as any,
       AEC: config?.AEC ?? true,
       ANS: config?.ANS ?? true,
       AGC: config?.AGC ?? true,
-    })
+    } as any)
 
     return this.localAudioTrack
   }
@@ -152,7 +152,7 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
             audioTrack: user.audioTrack,
             hasAudio: true,
           },
-          mediaType
+          mediaType as "audio" | "video"
         )
 
         this.startAudioPTSEmission(user.audioTrack!)
@@ -167,7 +167,7 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
           audioTrack: undefined,
           hasAudio: false,
         },
-        mediaType
+        mediaType as "audio" | "video"
       )
     })
 
@@ -209,9 +209,9 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
     })
 
     // Critical: Listen for stream messages (transcript data from AI agent)
-    this.client.on("stream-message", (user, stream) => {
+    this.client.on("stream-message", (uid, stream) => {
       // Reduced logging - only log message size
-      this.emit(RTCHelperEvents.STREAM_MESSAGE, user.uid, stream)
+      this.emit(RTCHelperEvents.STREAM_MESSAGE, uid as number, stream)
     })
 
     this.client.on("exception", (event) => {

@@ -41,7 +41,7 @@ export class SubRenderController {
   }
 
   setMode(mode: TranscriptHelperMode): void {
-    if (this.mode === Mode.AUTO || this.mode === Mode.UNKNOWN) {
+    if (this.mode === Mode.AUTO) {
       this.mode = mode
       if (mode === Mode.WORD) {
         this.startIntervalForWords()
