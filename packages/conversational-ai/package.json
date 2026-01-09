@@ -5,6 +5,14 @@
   "main": "index.ts",
   "types": "index.ts",
   "sideEffects": false,
+  "exports": {
+    ".": "./index.ts",
+    "./helper/rtc": "./helper/rtc.ts",
+    "./helper/rtm": "./helper/rtm.ts",
+    "./utils/sub-render": "./utils/sub-render.ts",
+    "./utils/event": "./utils/event.ts",
+    "./type": "./type.ts"
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",

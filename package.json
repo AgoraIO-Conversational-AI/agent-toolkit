@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "description": "TypeScript SDK for building Agora Conversational AI applications",
+  "main": "./packages/conversational-ai/index.ts",
+  "types": "./packages/conversational-ai/index.ts",
+  "exports": {
+    ".": "./packages/conversational-ai/index.ts",
+    "./helper/rtc": "./packages/conversational-ai/helper/rtc.ts",
+    "./helper/rtm": "./packages/conversational-ai/helper/rtm.ts",
+    "./utils/sub-render": "./packages/conversational-ai/utils/sub-render.ts",
+    "./utils/event": "./packages/conversational-ai/utils/event.ts",
+    "./type": "./packages/conversational-ai/type.ts"
+  },
   "scripts": {
     "test": "pnpm -r test",
     "test:watch": "pnpm -r test:watch",
