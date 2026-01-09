@@ -307,12 +307,6 @@ export { SubRenderController } from "./utils/sub-render";
 export { EventHelper } from "./utils/event";
 
 // Re-export React hooks from packages/react
-export { useConversationalAI } from "../react/use-conversational-ai";
-export type {
-  UseConversationalAIConfig,
-  UseConversationalAIReturn,
-} from "../react/use-conversational-ai";
-
 export { useLocalVideo } from "../react/use-local-video";
 export type {
   UseLocalVideoConfig,
