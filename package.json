@@ -11,7 +11,11 @@
     "./helper/rtm": "./packages/conversational-ai/helper/rtm.ts",
     "./utils/sub-render": "./packages/conversational-ai/utils/sub-render.ts",
     "./utils/event": "./packages/conversational-ai/utils/event.ts",
-    "./type": "./packages/conversational-ai/type.ts"
+    "./type": "./packages/conversational-ai/type.ts",
+    "./react": "./packages/react/index.ts",
+    "./react/use-conversational-ai": "./packages/react/use-conversational-ai.ts",
+    "./react/use-local-video": "./packages/react/use-local-video.ts",
+    "./react/use-remote-video": "./packages/react/use-remote-video.ts"
   },
   "scripts": {
     "test": "pnpm -r test",
