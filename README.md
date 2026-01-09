@@ -109,7 +109,7 @@ Import in your application:
 ```typescript
 import { ConversationalAIAPI } from "@agora/conversational-ai";
 import { RTCHelper } from "@agora/conversational-ai/helper/rtc";
-import { useConversationalAI } from "@agora/conversational-ai-react";
+import { useLocalVideo, useRemoteVideo } from "@agora/conversational-ai";
 ```
 
 ---
@@ -281,50 +281,26 @@ api.on("transcript-updated", (messages) => {
 await api.sendMessage("Hello, agent!", "100");
 ```
 
-### React
+### React Hooks
 
 ```typescript
-import { useConversationalAI } from '@agora/conversational-ai-react'
+import { useLocalVideo, useRemoteVideo } from '@agora/conversational-ai'
 
-function VoiceChat() {
-  const {
-    transcript,
-    isConnected,
-    isConnecting,
-    connect,
-    disconnect,
-    error,
-    api
-  } = useConversationalAI({
-    appId: 'your-app-id',
-    channel: 'test-channel',
-    token: null,
-    uid: 12345,
-    renderMode: 'auto'
+function VideoChat() {
+  const { videoTrack, startVideo, stopVideo } = useLocalVideo({
+    cameraId: 'default'
+  })
+
+  const { remoteVideoUsersArray } = useRemoteVideo({
+    client: rtcClient
   })
 
   return (
     <div>
-      {!isConnected ? (
-        <button onClick={connect} disabled={isConnecting}>
-          {isConnecting ? 'Connecting...' : 'Connect'}
-        </button>
-      ) : (
-        <>
-          <button onClick={disconnect}>Disconnect</button>
-          <div>
-            {transcript.map((msg, idx) => (
-              <div key={idx}>
-                <strong>{msg.uid === 0 ? 'Agent' : 'User'}:</strong> {msg.text}
-              </div>
-            ))}
-          </div>
-          <button onClick={() => api?.sendMessage('Hello!')}>
-            Send Message
-          </button>
-        </>
-      )}
-      {error && <p>Error: {error.message}</p>}
+      <video ref={localVideoRef} />
+      {remoteVideoUsersArray.map(user => (
+        <video key={user.uid} ref={user.videoTrack} />
+      ))}
     </div>
   )
 }
@@ -1586,88 +1562,6 @@ rtcHelper.on("network-quality", (quality) => {
     showNetworkWarning();
   }
 });
-```
-
----
-
-## React Hook
-
-### useConversationalAI
-
-Main React hook providing full SDK integration.
-
-```typescript
-function useConversationalAI(config: {
-  appId: string;
-  channel: string;
-  token: string | null;
-  uid: number;
-  autoConnect?: boolean;
-  renderMode?: TranscriptHelperMode;
-}): {
-  transcript: TranscriptItem[];
-  connectionState: ConnectionState;
-  isConnected: boolean;
-  isConnecting: boolean;
-  connect: () => Promise<void>;
-  disconnect: () => Promise<void>;
-  error: Error | null;
-  api: ConversationalAIAPI | null;
-};
-```
-
-**Example:**
-
-```typescript
-function VoiceChat() {
-  const {
-    transcript,
-    isConnected,
-    isConnecting,
-    connect,
-    disconnect,
-    error,
-    api
-  } = useConversationalAI({
-    appId: process.env.AGORA_APP_ID!,
-    channel: 'my-channel',
-    token: null,
-    uid: Math.floor(Math.random() * 100000),
-    autoConnect: false,
-    renderMode: 'auto'
-  })
-
-  if (error) {
-    return <div>Error: {error.message}</div>
-  }
-
-  if (!isConnected) {
-    return (
-      <button onClick={connect} disabled={isConnecting}>
-        {isConnecting ? 'Connecting...' : 'Connect'}
-      </button>
-    )
-  }
-
-  return (
-    <div>
-      <button onClick={disconnect}>Disconnect</button>
-
-      <div className="transcript">
-        {transcript.map((msg, idx) => (
-          <div key={idx} className={msg.uid === 0 ? 'agent' : 'user'}>
-            <strong>{msg.uid === 0 ? 'Agent' : 'User'}:</strong>
-            <span>{msg.text}</span>
-          </div>
-        ))}
-      </div>
-
-      <button onClick={() => api?.sendMessage('Hello!')}>
-        Send Message
-      </button>
-    </div>
-  )
-}
 ```
 
 ---
