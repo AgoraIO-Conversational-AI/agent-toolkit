@@ -1,237 +1,263 @@
-"use client"
+"use client";
 
-import { useState, useCallback, useEffect } from "react"
-import type { ICameraVideoTrack } from "agora-rtc-sdk-ng"
-import AgoraRTC from "agora-rtc-sdk-ng"
+import { useState, useCallback, useEffect } from "react";
+import type { ICameraVideoTrack } from "agora-rtc-sdk-ng";
+import AgoraRTC from "agora-rtc-sdk-ng";
 
 export interface VideoDevice {
-  deviceId: string
-  label: string
-  groupId?: string
+  deviceId: string;
+  label: string;
+  groupId?: string;
 }
 
 export interface UseLocalVideoConfig {
   /**
    * Initial camera device ID (optional)
    */
-  deviceId?: string
+  deviceId?: string;
 
   /**
    * Video encoder configuration
    * @default "720p_2"
    */
-  encoderConfig?: string
+  encoderConfig?: string;
 
   /**
    * Start with video enabled
    * @default false
    */
-  startEnabled?: boolean
+  startEnabled?: boolean;
 }
 
 export interface UseLocalVideoReturn {
   /**
    * Local camera video track
    */
-  videoTrack: ICameraVideoTrack | null
+  videoTrack: ICameraVideoTrack | null;
 
   /**
    * Whether video is currently enabled
    */
-  isVideoEnabled: boolean
+  isVideoEnabled: boolean;
 
   /**
    * Available camera devices
    */
-  cameras: VideoDevice[]
+  cameras: VideoDevice[];
 
   /**
    * Currently selected camera device ID
    */
-  currentDeviceId: string | undefined
+  currentDeviceId: string | undefined;
 
   /**
    * Enable/create video track
    */
-  enableVideo: () => Promise<void>
+  enableVideo: () => Promise<void>;
 
   /**
    * Disable/destroy video track
    */
-  disableVideo: () => Promise<void>
+  disableVideo: () => Promise<void>;
 
   /**
    * Toggle video on/off
    */
-  toggleVideo: () => Promise<void>
+  toggleVideo: () => Promise<void>;
 
   /**
    * Switch to a different camera
    */
-  switchCamera: (deviceId: string) => Promise<void>
+  switchCamera: (deviceId: string) => Promise<void>;
 
   /**
    * Refresh available cameras list
    */
-  refreshCameras: () => Promise<void>
+  refreshCameras: () => Promise<void>;
 
   /**
    * Error message if any
    */
-  error: string | null
+  error: string | null;
 }
 
-export function useLocalVideo(config?: UseLocalVideoConfig): UseLocalVideoReturn {
-  const [videoTrack, setVideoTrack] = useState<ICameraVideoTrack | null>(null)
-  const [isVideoEnabled, setIsVideoEnabled] = useState(false)
-  const [cameras, setCameras] = useState<VideoDevice[]>([])
-  const [currentDeviceId, setCurrentDeviceId] = useState<string | undefined>(config?.deviceId)
-  const [error, setError] = useState<string | null>(null)
+export function useLocalVideo(
+  config?: UseLocalVideoConfig,
+): UseLocalVideoReturn {
+  const [videoTrack, setVideoTrack] = useState<ICameraVideoTrack | null>(null);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [cameras, setCameras] = useState<VideoDevice[]>([]);
+  const [currentDeviceId, setCurrentDeviceId] = useState<string | undefined>(
+    config?.deviceId,
+  );
+  const [error, setError] = useState<string | null>(null);
 
   // Load available cameras
   const refreshCameras = useCallback(async () => {
     try {
-      setError(null)
-      const devices = await AgoraRTC.getCameras()
+      setError(null);
+      const devices = await AgoraRTC.getCameras();
       const videoDevices: VideoDevice[] = devices.map((device) => ({
         deviceId: device.deviceId,
         label: device.label || `Camera ${device.deviceId.slice(0, 8)}`,
         groupId: device.groupId,
-      }))
-      setCameras(videoDevices)
+      }));
+      setCameras(videoDevices);
 
       // Set current device if not set
       if (!currentDeviceId && videoDevices.length > 0) {
-        setCurrentDeviceId(videoDevices[0].deviceId)
+        setCurrentDeviceId(videoDevices[0].deviceId);
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to get cameras"
-      setError(errorMsg)
-      console.error("[useLocalVideo] Error getting cameras:", err)
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to get cameras";
+      setError(errorMsg);
+      console.error("[useLocalVideo] Error getting cameras:", err);
     }
-  }, [currentDeviceId])
+  }, [currentDeviceId]);
 
   // Initialize cameras on mount
   useEffect(() => {
-    refreshCameras()
+    refreshCameras();
 
     // Listen for device changes
     const handleDeviceChange = () => {
-      refreshCameras()
-    }
+      refreshCameras();
+    };
 
-    navigator.mediaDevices.addEventListener("devicechange", handleDeviceChange)
+    navigator.mediaDevices.addEventListener("devicechange", handleDeviceChange);
 
     return () => {
-      navigator.mediaDevices.removeEventListener("devicechange", handleDeviceChange)
-    }
-  }, [refreshCameras])
+      navigator.mediaDevices.removeEventListener(
+        "devicechange",
+        handleDeviceChange,
+      );
+    };
+  }, [refreshCameras]);
 
   // Enable video
   const enableVideo = useCallback(async () => {
     try {
-      setError(null)
+      setError(null);
       console.log("[useLocalVideo] enableVideo called", {
         hasExistingTrack: !!videoTrack,
         currentDeviceId,
-      })
+      });
 
-      // If track already exists, just enable it
+      // Always close existing track and create fresh one
+      // This ensures consistent behavior like first connect
       if (videoTrack) {
-        console.log("[useLocalVideo] Enabling existing video track")
-        await videoTrack.setEnabled(true)
-        setIsVideoEnabled(true)
-        return
+        console.log(
+          "[useLocalVideo] Closing existing track before creating new one",
+        );
+        try {
+          videoTrack.close();
+        } catch (e) {
+          // Ignore if already closed
+        }
+        setVideoTrack(null);
+        setIsVideoEnabled(false);
       }
 
-      // Create new video track
-      console.log("[useLocalVideo] Creating new camera video track")
+      // Create new video track (same flow as first connect)
+      console.log("[useLocalVideo] Creating new camera video track");
       const track = await AgoraRTC.createCameraVideoTrack({
         cameraId: currentDeviceId,
         encoderConfig: (config?.encoderConfig as any) || "720p_2",
-      })
+      });
 
-      console.log("[useLocalVideo] Video track created successfully:", track)
-      setVideoTrack(track)
-      setIsVideoEnabled(true)
-      if (track._deviceName) {
-        setCurrentDeviceId(track.getTrackId())
-      }
+      console.log("[useLocalVideo] Video track created successfully:", track);
+      setVideoTrack(track);
+      setIsVideoEnabled(true);
+      // Don't overwrite currentDeviceId - keep the actual camera device ID
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to enable video"
-      setError(errorMsg)
-      console.error("[useLocalVideo] Error enabling video:", err)
-      throw err
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to enable video";
+      setError(errorMsg);
+      console.error("[useLocalVideo] Error enabling video:", err);
+      throw err;
     }
-  }, [videoTrack, currentDeviceId, config?.encoderConfig])
+  }, [videoTrack, currentDeviceId, config?.encoderConfig]);
 
   // Disable video
   const disableVideo = useCallback(async () => {
     try {
-      setError(null)
+      setError(null);
 
       if (videoTrack) {
-        await videoTrack.setEnabled(false)
-        setIsVideoEnabled(false)
+        // Close track completely so next enable creates fresh track
+        try {
+          videoTrack.close();
+        } catch (e) {
+          // Ignore if already closed
+        }
+        setVideoTrack(null);
+        setIsVideoEnabled(false);
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to disable video"
-      setError(errorMsg)
-      console.error("[useLocalVideo] Error disabling video:", err)
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to disable video";
+      setError(errorMsg);
+      console.error("[useLocalVideo] Error disabling video:", err);
     }
-  }, [videoTrack])
+  }, [videoTrack]);
 
   // Toggle video
   const toggleVideo = useCallback(async () => {
     if (isVideoEnabled) {
-      await disableVideo()
+      await disableVideo();
     } else {
-      await enableVideo()
+      await enableVideo();
     }
-  }, [isVideoEnabled, enableVideo, disableVideo])
+  }, [isVideoEnabled, enableVideo, disableVideo]);
 
   // Switch camera
   const switchCamera = useCallback(
     async (deviceId: string) => {
       try {
-        setError(null)
+        setError(null);
 
         if (!videoTrack) {
           // If no track exists, just set the device ID for future use
-          setCurrentDeviceId(deviceId)
-          return
+          setCurrentDeviceId(deviceId);
+          return;
         }
 
         // Switch the camera on existing track
-        await videoTrack.setDevice(deviceId)
-        setCurrentDeviceId(deviceId)
+        await videoTrack.setDevice(deviceId);
+        setCurrentDeviceId(deviceId);
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Failed to switch camera"
-        setError(errorMsg)
-        console.error("[useLocalVideo] Error switching camera:", err)
-        throw err
+        const errorMsg =
+          err instanceof Error ? err.message : "Failed to switch camera";
+        setError(errorMsg);
+        console.error("[useLocalVideo] Error switching camera:", err);
+        throw err;
       }
     },
-    [videoTrack]
-  )
+    [videoTrack],
+  );
 
   // Auto-start video if configured
   useEffect(() => {
     if (config?.startEnabled && !videoTrack) {
       enableVideo().catch((err) => {
-        console.error("[useLocalVideo] Auto-start video failed:", err)
-      })
+        console.error("[useLocalVideo] Auto-start video failed:", err);
+      });
     }
-  }, [config?.startEnabled, videoTrack, enableVideo])
+  }, [config?.startEnabled, videoTrack, enableVideo]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (videoTrack) {
-        videoTrack.close()
+        try {
+          videoTrack.close();
+        } catch (e) {
+          // Track may already be closed
+        }
       }
-    }
-  }, [videoTrack])
+    };
+  }, [videoTrack]);
 
   return {
     videoTrack,
@@ -244,5 +270,5 @@ export function useLocalVideo(config?: UseLocalVideoConfig): UseLocalVideoReturn
     switchCamera,
     refreshCameras,
     error,
-  }
+  };
 }
