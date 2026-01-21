@@ -1,6 +1,6 @@
 // Agora RTC client wrapper with singleton pattern
 
-import AgoraRTC, { IAgoraRTCClient, IMicrophoneAudioTrack } from "agora-rtc-sdk-ng"
+import AgoraRTC, { IAgoraRTCClient, IMicrophoneAudioTrack, ICameraVideoTrack } from "agora-rtc-sdk-ng"
 import { EventHelper } from "../utils/event"
 import type {
   RTCHelperEventMap,
@@ -16,6 +16,7 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
 
   public client: IAgoraRTCClient | null = null
   public localAudioTrack: IMicrophoneAudioTrack | null = null
+  public localVideoTrack: ICameraVideoTrack | null = null
 
   private appId: string = ""
   private channel: string = ""
@@ -23,6 +24,8 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
   private uid: number = 0
   private connectionState: ConnectionState = CS.DISCONNECTED
   private volumeIntervalRef: NodeJS.Timeout | null = null
+  private shouldSubscribeAudio?: (uid: number) => boolean
+  private shouldSubscribeVideo?: (uid: number) => boolean
 
   private constructor() {
     super()
@@ -40,11 +43,15 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
     channel: string
     token: string | null
     uid: number
+    shouldSubscribeAudio?: (uid: number) => boolean
+    shouldSubscribeVideo?: (uid: number) => boolean
   }): Promise<void> {
     this.appId = config.appId
     this.channel = config.channel
     this.token = config.token
     this.uid = config.uid
+    this.shouldSubscribeAudio = config.shouldSubscribeAudio
+    this.shouldSubscribeVideo = config.shouldSubscribeVideo
 
     this.client = AgoraRTC.createClient({
       mode: "rtc",
@@ -68,6 +75,21 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
     } as any)
 
     return this.localAudioTrack
+  }
+
+  async createVideoTrack(config?: {
+    cameraId?: string
+    encoderConfig?: string
+  }): Promise<ICameraVideoTrack> {
+    console.log("[RTCHelper] createVideoTrack called", config)
+
+    this.localVideoTrack = await AgoraRTC.createCameraVideoTrack({
+      cameraId: config?.cameraId,
+      encoderConfig: (config?.encoderConfig || "720p_2") as any,
+    })
+
+    console.log("[RTCHelper] Video track created:", this.localVideoTrack._ID)
+    return this.localVideoTrack
   }
 
   async join(): Promise<void> {
@@ -108,10 +130,19 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
 
     this.stopVolumeMonitoring()
 
+    // Cleanup audio track
     if (this.localAudioTrack) {
       this.localAudioTrack.stop()
       this.localAudioTrack.close()
       this.localAudioTrack = null
+    }
+
+    // Cleanup video track
+    if (this.localVideoTrack) {
+      console.log("[RTCHelper] Stopping and closing video track on leave")
+      this.localVideoTrack.stop()
+      this.localVideoTrack.close()
+      this.localVideoTrack = null
     }
 
     await this.client.leave()
@@ -125,6 +156,19 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
 
   getMuted(): boolean {
     return this.localAudioTrack?.enabled === false
+  }
+
+  async setVideoEnabled(enabled: boolean): Promise<void> {
+    if (!this.localVideoTrack) {
+      console.warn("[RTCHelper] setVideoEnabled called but no video track exists")
+      return
+    }
+    console.log("[RTCHelper] setVideoEnabled:", enabled)
+    await this.localVideoTrack.setEnabled(enabled)
+  }
+
+  getVideoEnabled(): boolean {
+    return this.localVideoTrack?.enabled === true
   }
 
   getRemoteUsers(): RemoteUser[] {
@@ -141,8 +185,20 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
     if (!this.client) return
 
     this.client.on("user-published", async (user, mediaType) => {
+      // Check if we should subscribe based on filter callbacks
+      const shouldSubscribe = mediaType === "audio"
+        ? (this.shouldSubscribeAudio?.(user.uid) ?? true)
+        : (this.shouldSubscribeVideo?.(user.uid) ?? true)
+
+      if (!shouldSubscribe) {
+        console.log(`[RTCHelper] Skipping ${mediaType} subscription for user ${user.uid}`)
+        return
+      }
+
+      // Subscribe to both audio and video
+      await this.client!.subscribe(user, mediaType)
+
       if (mediaType === "audio") {
-        await this.client!.subscribe(user, mediaType)
         user.audioTrack?.play()
 
         this.emit(
@@ -156,6 +212,17 @@ export class RTCHelper extends EventHelper<RTCHelperEventMap> {
         )
 
         this.startAudioPTSEmission(user.audioTrack!)
+      } else if (mediaType === "video") {
+        // Emit video published event
+        this.emit(
+          RTCHelperEvents.USER_PUBLISHED,
+          {
+            uid: user.uid,
+            videoTrack: user.videoTrack,
+            hasVideo: true,
+          } as any,
+          mediaType as "audio" | "video"
+        )
       }
     })
 

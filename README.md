@@ -33,12 +33,15 @@ applications with Agora RTC/RTM.
     - [getInstance()](#static-getinstance-rtchelper)
     - [init()](#initconfig-promisevoid)
     - [createAudioTrack()](#createaudiotrackconfig-promiseimicrophoneaudiotrack)
+    - [createVideoTrack()](#createvideotrackconfig-promiseicameravideotrack)
     - [join()](#join-promisevoid)
     - [leave()](#leave-promisevoid)
     - [publish()](#publish-promisevoid)
     - [unpublish()](#unpublish-promisevoid)
     - [setMuted()](#setmutedmuted-boolean-promisevoid)
     - [getMuted()](#getmuted-boolean)
+    - [setVideoEnabled()](#setvideoenabledenabled-boolean-promisevoid)
+    - [getVideoEnabled()](#getvideoenabled-boolean)
     - [getRemoteUsers()](#getremoteusers-remoteuser)
     - [getConnectionState()](#getconnectionstate-connectionstate)
     - [destroy()](#destroy-void-1)
@@ -627,6 +630,28 @@ const track = await rtcHelper.createAudioTrack({
 
 ---
 
+##### `createVideoTrack(config?): Promise<ICameraVideoTrack>`
+
+Create camera video track.
+
+```typescript
+const track = await rtcHelper.createVideoTrack({
+  cameraId: "default",
+  encoderConfig: "720p_2",
+});
+```
+
+**Parameters:**
+
+- `config.cameraId` (optional) - Camera device ID (default: default camera)
+- `config.encoderConfig` (optional) - Encoder configuration (default: '720p_2')
+
+**Returns:** Promise<ICameraVideoTrack>
+
+**Note:** The video track is stored in `rtcHelper.localVideoTrack` and automatically cleaned up in `leave()`.
+
+---
+
 ##### `join(): Promise<void>`
 
 Join RTC channel.
@@ -706,6 +731,37 @@ const isMuted = rtcHelper.getMuted();
 ```
 
 **Returns:** boolean - true if muted
+
+---
+
+##### `setVideoEnabled(enabled: boolean): Promise<void>`
+
+Enable or disable local video track.
+
+```typescript
+await rtcHelper.setVideoEnabled(true);  // Enable camera
+await rtcHelper.setVideoEnabled(false); // Disable camera
+```
+
+**Parameters:**
+
+- `enabled` (boolean) - true to enable, false to disable
+
+**Returns:** Promise<void>
+
+**Note:** Video track must be created with `createVideoTrack()` before calling this method.
+
+---
+
+##### `getVideoEnabled(): boolean`
+
+Get current video enabled state.
+
+```typescript
+const isVideoEnabled = rtcHelper.getVideoEnabled();
+```
+
+**Returns:** boolean - true if video is enabled
 
 ---
 
