@@ -591,6 +591,8 @@ await rtcHelper.init({
   channel: "test-channel",
   token: "your-token",
   uid: 12345,
+  shouldSubscribeAudio: (uid) => uid !== 999, // Skip audio from uid 999
+  shouldSubscribeVideo: (uid) => uid === 100, // Only video from uid 100
 });
 ```
 
@@ -600,6 +602,8 @@ await rtcHelper.init({
 - `config.channel` - Channel name
 - `config.token` - RTC token (or null)
 - `config.uid` - User ID as number
+- `config.shouldSubscribeAudio` (optional) - Callback to filter audio subscriptions by UID (default: subscribe to all)
+- `config.shouldSubscribeVideo` (optional) - Callback to filter video subscriptions by UID (default: subscribe to all)
 
 **Returns:** Promise<void>
 
@@ -739,7 +743,7 @@ const isMuted = rtcHelper.getMuted();
 Enable or disable local video track.
 
 ```typescript
-await rtcHelper.setVideoEnabled(true);  // Enable camera
+await rtcHelper.setVideoEnabled(true); // Enable camera
 await rtcHelper.setVideoEnabled(false); // Disable camera
 ```
 
